@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-artistic-bg: #FDFCFB;
+    --color-artistic-panel: #FAF9F7;
+    --color-artistic-card: #FFFFFF;
+    --color-artistic-soft: #EAE7E2;
+    --color-artistic-border: #EAE7E2;
+    --color-artistic-border-dark: #1A1A1A;
+    --color-artistic-dark: #1A1A1A;
+    --color-artistic-muted: #8C8279;
+    --color-artistic-subtle: #D4CEC6;
+    --color-artistic-accent: #8C6D46;
+  }
+
+  body {
+    background-color: var(--color-artistic-bg);
+    color: var(--color-artistic-dark);
+    font-family: 'Alexandria', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+.font-serif-artistic {
+  font-family: 'Cormorant Garamond', 'Newsreader', serif;
+}
+
+.font-display {
+  font-family: 'Syne', 'Cormorant Garamond', 'Alexandria', sans-serif;
+}
+
+.font-script {
+  font-family: 'Caveat', cursive;
+}
+
+.font-sans-clean {
+  font-family: 'Plus Jakarta Sans', 'Alexandria', sans-serif;
+}
+
+/* Delicate hairline border utilities */
+.border-artistic-hairline {
+  border-color: #EAE7E2;
+}
+
+.border-artistic-dark {
+  border-color: #1A1A1A;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FAF9F7;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4CEC6;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8C8279;
+}
+
+/* Smooth active selection */
+::selection {
+  background-color: #1A1A1A;
+  color: #FDFCFB;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Sense Specialty Coffee & Bakery | سينس كافيه",
+  "description": "Live it with all your senses. Specialty coffee, matcha bar, signature frappes, and bakery house digital menu with a warm minimalist aesthetic.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
