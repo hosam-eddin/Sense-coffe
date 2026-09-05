@@ -21,7 +21,13 @@ import { Heart, Sparkles, Filter, X, ArrowDown, BookOpen, LayoutGrid, FileText }
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
-  const [lang, setLang] = useState<Language>('ar');
+  const [lang, setLang] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('sense_lang');
+      if (saved === 'ar' || saved === 'en') return saved;
+    } catch {}
+    return 'en';
+  });
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
@@ -50,12 +56,28 @@ export default function App() {
 
   // Update HTML direction and language
   useEffect(() => {
+    try {
+      localStorage.setItem('sense_lang', lang);
+    } catch {}
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   }, [lang]);
 
   const toggleLang = () => {
     setLang((prev) => (prev === 'ar' ? 'en' : 'ar'));
+  };
+
+  const handleSelectCategory = (id: CategoryId) => {
+    setSelectedCategory(id);
+    if (showOnlyFavorites) setShowOnlyFavorites(false);
+    if (id !== 'all' && viewMode === 'sheet') {
+      setTimeout(() => {
+        const el = document.getElementById(`paper-section-${id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 50);
+    }
   };
 
   const toggleFavorite = (id: string) => {
@@ -169,10 +191,7 @@ export default function App() {
         {/* Category Navigation Bar (Sticky) */}
         <CategoryNav
           selectedCategoryId={selectedCategory}
-          onSelectCategory={(id) => {
-            setSelectedCategory(id);
-            if (showOnlyFavorites) setShowOnlyFavorites(false);
-          }}
+          onSelectCategory={handleSelectCategory}
           lang={lang}
         />
 
@@ -284,7 +303,8 @@ export default function App() {
             />
           ) : (
             <MenuSheetView
-              items={filteredItems}
+              items={searchQuery || showOnlyFavorites ? filteredItems : MENU_ITEMS}
+              highlightCategory={selectedCategory !== 'all' ? selectedCategory : undefined}
               lang={lang}
               onSelectItem={setSelectedItem}
               onOpenQr={() => setIsQrOpen(true)}

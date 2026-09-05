@@ -10,6 +10,7 @@ interface MenuSheetViewProps {
   lang: Language;
   onSelectItem: (item: MenuItem) => void;
   onOpenQr: () => void;
+  highlightCategory?: string;
 }
 
 export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
@@ -17,11 +18,13 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
   lang,
   onSelectItem,
   onOpenQr,
+  highlightCategory,
 }) => {
   const isAr = lang === 'ar';
   const [currentPage, setCurrentPage] = useState<1 | 2>(1);
   const [direction, setDirection] = useState<number>(0);
-  const [viewAllTogether, setViewAllTogether] = useState<boolean>(false);
+  // Default to true so all menu items across all volumes are always displayed completely
+  const [viewAllTogether, setViewAllTogether] = useState<boolean>(true);
 
   // Group items by category to render classic menu sections
   const dripItems = items.filter((i) => i.categoryId === 'drip');
@@ -68,11 +71,18 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentPage, isAr]);
 
-  const renderItemList = (sectionTitleEn: string, sectionTitleAr: string, list: MenuItem[], sublabel?: string) => {
+  const renderItemList = (sectionId: string, sectionTitleEn: string, sectionTitleAr: string, list: MenuItem[], sublabel?: string) => {
     if (list.length === 0) return null;
 
+    const isHighlighted = highlightCategory === sectionId;
+
     return (
-      <div className="mb-8 sm:mb-10">
+      <div
+        id={`paper-section-${sectionId}`}
+        className={`mb-8 sm:mb-10 scroll-mt-24 transition-all duration-300 rounded-xl ${
+          isHighlighted ? 'p-3 bg-amber-500/10 ring-1 ring-amber-500/30' : ''
+        }`}
+      >
         <div className="flex items-baseline justify-between border-b border-[#1A1A1A] pb-2 mb-4 sm:mb-5">
           <div>
             <h3 className="font-serif-artistic text-lg sm:text-xl md:text-2xl text-[#1A1A1A] tracking-tight font-semibold">
@@ -144,7 +154,7 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
 
   // Render Page 1 Content: Specialty Drip, Hot Coffee, Matcha Bar, Ice Coffee
   const renderPage1Content = () => (
-    <div className="relative bg-[#FFFFFF] rounded-2xl border border-[#EAE7E2] p-4 sm:p-8 md:p-12 shadow-xs overflow-hidden">
+    <div id="paper-menu-vol-1" className="relative bg-[#FFFFFF] rounded-2xl border border-[#EAE7E2] p-4 sm:p-8 md:p-12 shadow-xs overflow-hidden scroll-mt-24">
       {/* Editorial Decorative Spine Border */}
       <div className={`absolute top-0 bottom-0 ${isAr ? 'right-0 border-r-4' : 'left-0 border-l-4'} border-[#1A1A1A]/20 pointer-events-none`}></div>
 
@@ -169,14 +179,14 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
         {/* Left Column */}
         <div>
-          {renderItemList('Drip Coffee', 'القهوة المقطرة V60', dripItems, isAr ? 'محاصيل مختصة واستخلاص يدوي' : 'Manual Artisanal Pour-Over')}
-          {renderItemList('Coffee Classics', 'القهوة الكلاسيكية والساخنة', hotCoffeeItems)}
+          {renderItemList('drip', 'Drip Coffee', 'القهوة المقطرة V60', dripItems, isAr ? 'محاصيل مختصة واستخلاص يدوي' : 'Manual Artisanal Pour-Over')}
+          {renderItemList('coffee', 'Coffee Classics', 'القهوة الكلاسيكية والساخنة', hotCoffeeItems)}
         </div>
 
         {/* Right Column */}
         <div>
-          {renderItemList('Matcha Bar', 'بار الماتشا والكلاود', matchaItems, isAr ? 'ماتشا يابانية فاخرة' : 'Ceremonial Japanese Grade')}
-          {renderItemList('Ice Coffee', 'القهوة المثلجة', iceCoffeeItems, isAr ? 'إسبريسو منعش مع حليب بارد ونكهات' : 'Chilled Signature Espressos')}
+          {renderItemList('matcha', 'Matcha Bar', 'بار الماتشا والكلاود', matchaItems, isAr ? 'ماتشا يابانية فاخرة' : 'Ceremonial Japanese Grade')}
+          {renderItemList('ice-coffee', 'Ice Coffee', 'القهوة المثلجة', iceCoffeeItems, isAr ? 'إسبريسو منعش مع حليب بارد ونكهات' : 'Chilled Signature Espressos')}
         </div>
       </div>
 
@@ -195,7 +205,7 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
 
   // Render Page 2 Content: Frappes, Mojitos, Smoothies & Artisanal Bakery
   const renderPage2Content = () => (
-    <div className="relative bg-[#FFFFFF] rounded-2xl border border-[#EAE7E2] p-4 sm:p-8 md:p-12 shadow-xs overflow-hidden">
+    <div id="paper-menu-vol-2" className="relative bg-[#FFFFFF] rounded-2xl border border-[#EAE7E2] p-4 sm:p-8 md:p-12 shadow-xs overflow-hidden scroll-mt-24">
       {/* Editorial Decorative Spine Border */}
       <div className={`absolute top-0 bottom-0 ${isAr ? 'right-0 border-r-4' : 'left-0 border-l-4'} border-[#1A1A1A]/20 pointer-events-none`}></div>
 
@@ -220,7 +230,7 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
         {/* Left Column: Frappes */}
         <div>
-          {renderItemList('Frappe', 'الفرابيه المثلج', frappeItems)}
+          {renderItemList('frappe', 'Frappe', 'الفرابيه المثلج', frappeItems)}
           
           {/* Boba Addon Highlight box */}
           <div className="p-3.5 rounded-xl bg-[#FAF9F7] border border-[#EAE7E2] flex items-center justify-between text-xs text-[#1A1A1A] mb-6">
@@ -236,9 +246,9 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
 
         {/* Right Column: Mojito, Smoothies & Bakery */}
         <div>
-          {renderItemList('Mojito & Energy', 'الموهيتو الفوار والمنعشات', mojitoItems)}
-          {renderItemList('Smoothies', 'السموذي الطبيعي', smoothieItems)}
-          {renderItemList('Bakery & Savory', 'المخبوزات والسندوتشات الطازجة', bakeryItems, isAr ? 'كرواسون فرنسي وخبز فوكاشيا وتشاباتا' : 'Artisanal Croissants & Focaccia')}
+          {renderItemList('mojito', 'Mojito & Energy', 'الموهيتو الفوار والمنعشات', mojitoItems)}
+          {renderItemList('smoothies', 'Smoothies', 'السموذي الطبيعي', smoothieItems)}
+          {renderItemList('bakery', 'Bakery & Savory', 'المخبوزات والسندوتشات الطازجة', bakeryItems, isAr ? 'كرواسون فرنسي وخبز فوكاشيا وتشاباتا' : 'Artisanal Croissants & Focaccia')}
         </div>
       </div>
 
@@ -275,6 +285,17 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
     </div>
   );
 
+  const scrollToVol = (volNum: 1 | 2) => {
+    if (viewAllTogether) {
+      const el = document.getElementById(volNum === 1 ? 'paper-menu-vol-1' : 'paper-menu-vol-2');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    }
+    goToPage(volNum);
+  };
+
   return (
     <div id="paper-menu-book-container" className="max-w-5xl mx-auto space-y-6">
       
@@ -285,7 +306,7 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
         <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
           <button
             id="menu-page-1-tab-btn"
-            onClick={() => goToPage(1)}
+            onClick={() => scrollToVol(1)}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold transition-all ${
               currentPage === 1 && !viewAllTogether
                 ? 'bg-[#1A1A1A] text-[#FDFCFB] shadow-xs'
@@ -299,7 +320,7 @@ export const MenuSheetView: React.FC<MenuSheetViewProps> = ({
 
           <button
             id="menu-page-2-tab-btn"
-            onClick={() => goToPage(2)}
+            onClick={() => scrollToVol(2)}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold transition-all ${
               currentPage === 2 && !viewAllTogether
                 ? 'bg-[#1A1A1A] text-[#FDFCFB] shadow-xs'
