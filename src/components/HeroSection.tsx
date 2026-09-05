@@ -150,7 +150,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </motion.div>
 
           {/* Sensory Feature Highlights matching Artistic Flair */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 w-full mt-10 pt-6 border-t border-[#EAE7E2] text-left">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 w-full mt-8 sm:mt-10 pt-6 border-t border-[#EAE7E2] text-start">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#FAF9F7] border border-[#EAE7E2]">
               <div className="w-8 h-8 rounded-full bg-[#EAE7E2] text-[#1A1A1A] flex items-center justify-center shrink-0">
                 <Coffee className="w-4 h-4" />

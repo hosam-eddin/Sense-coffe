@@ -46,34 +46,41 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Controls: View Switcher, QR, Language, Location */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-[#FAF9F7] p-1 rounded-xl border border-[#EAE7E2]">
-              <button
-                id="view-mode-cards-btn"
-                onClick={() => onChangeViewMode('cards')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  viewMode === 'cards'
-                    ? 'bg-[#1A1A1A] text-[#FDFCFB] shadow-xs'
-                    : 'text-[#8C8279] hover:text-[#1A1A1A]'
-                }`}
-                title={isAr ? 'عرض البطاقات المصورة' : 'Visual Cards View'}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{isAr ? 'بطاقات' : 'Cards'}</span>
-              </button>
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            {/* View Mode Toggle: Paper Menu (Default) vs Cards (Alternative) */}
+            <div className="flex items-center bg-[#FAF9F7] p-0.5 sm:p-1 rounded-xl border border-[#EAE7E2]">
               <button
                 id="view-mode-sheet-btn"
                 onClick={() => onChangeViewMode('sheet')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all ${
                   viewMode === 'sheet'
                     ? 'bg-[#1A1A1A] text-[#FDFCFB] shadow-xs'
                     : 'text-[#8C8279] hover:text-[#1A1A1A]'
                 }`}
-                title={isAr ? 'عرض المينيو الورقي الكلاسيكي' : 'Classic Sheet View'}
+                title={isAr ? 'المينيو الورقي الأصلي (العرض الأساسي)' : 'Classic Paper Menu (Primary View)'}
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{isAr ? 'مينيو ورقي' : 'Menu Sheet'}</span>
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden min-[400px]:inline">{isAr ? 'المينيو الورقي' : 'Paper Menu'}</span>
+                <span className="min-[400px]:hidden">{isAr ? 'ورقي' : 'Sheet'}</span>
+                {viewMode === 'sheet' && (
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-semibold hidden md:inline">
+                    {isAr ? 'الأساسي' : 'Default'}
+                  </span>
+                )}
+              </button>
+
+              <button
+                id="view-mode-cards-btn"
+                onClick={() => onChangeViewMode('cards')}
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all ${
+                  viewMode === 'cards'
+                    ? 'bg-[#1A1A1A] text-[#FDFCFB] shadow-xs'
+                    : 'text-[#8C8279] hover:text-[#1A1A1A]'
+                }`}
+                title={isAr ? 'عرض البطاقات المصورة (بديل)' : 'Visual Cards View (Alternative)'}
+              >
+                <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+                <span>{isAr ? 'بطاقات' : 'Cards'}</span>
               </button>
             </div>
 
@@ -81,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="open-qr-btn"
               onClick={onOpenQr}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl border border-[#EAE7E2] bg-[#FAF9F7] text-[#1A1A1A] hover:bg-[#EAE7E2] transition-colors flex items-center gap-1.5 text-xs font-medium"
+              className="p-1.5 sm:px-3 sm:py-2 rounded-xl border border-[#EAE7E2] bg-[#FAF9F7] text-[#1A1A1A] hover:bg-[#EAE7E2] transition-colors flex items-center gap-1.5 text-xs font-medium shrink-0"
               title={isAr ? 'رمز QR للمنيو' : 'QR Code for Table'}
             >
               <QrCode className="w-4 h-4 text-[#1A1A1A]" />
@@ -104,7 +111,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="lang-toggle-btn"
               onClick={onToggleLang}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1A1A1A] text-[#FDFCFB] hover:bg-[#333333] transition-all text-xs font-semibold shadow-xs"
+              className="flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#1A1A1A] text-[#FDFCFB] hover:bg-[#333333] transition-all text-xs font-semibold shadow-xs shrink-0"
             >
               <Globe className="w-3.5 h-3.5" />
               <span>{isAr ? 'English' : 'عربي'}</span>

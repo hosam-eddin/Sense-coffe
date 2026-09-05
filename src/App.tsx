@@ -16,7 +16,8 @@ import { ItemDetailModal } from './components/ItemDetailModal';
 import { QrCodeModal } from './components/QrCodeModal';
 import { AboutSense } from './components/AboutSense';
 import { Footer } from './components/Footer';
-import { Heart, Sparkles, Filter, X, ArrowDown } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
+import { Heart, Sparkles, Filter, X, ArrowDown, BookOpen, LayoutGrid, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -25,7 +26,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [activeFilterTag, setActiveFilterTag] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'cards' | 'sheet'>('cards');
+  // Default is 'sheet' (Paper Menu) as primary view requested by user
+  const [viewMode, setViewMode] = useState<'cards' | 'sheet'>('sheet');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isQrOpen, setIsQrOpen] = useState<boolean>(false);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
@@ -224,7 +226,7 @@ export default function App() {
           </div>
 
           {/* Active Category Title & Description */}
-          <div className="py-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+          <div className="py-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <h2 className="font-serif-artistic font-semibold text-2xl sm:text-3xl text-[#1A1A1A]">
                 {showOnlyFavorites
@@ -240,11 +242,34 @@ export default function App() {
               </p>
             </div>
 
-            {/* View Mode indicator badge */}
-            <div className="text-xs uppercase tracking-widest text-[#8C8279] font-medium hidden sm:block">
-              {viewMode === 'cards'
-                ? (isAr ? 'نمط العرض: بطاقات مصورة' : 'View: Visual Cards')
-                : (isAr ? 'نمط العرض: قائمة ورقية كلاسيكية' : 'View: Classic Paper Sheet')}
+            {/* Clear Primary View Switcher directly above menu */}
+            <div className="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 rounded-2xl bg-[#FAF9F7] border border-[#EAE7E2] shadow-2xs w-full sm:w-auto">
+              <button
+                id="main-switch-to-sheet-btn"
+                onClick={() => setViewMode('sheet')}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold transition-all ${
+                  viewMode === 'sheet'
+                    ? 'bg-[#1A1A1A] text-[#FDFCFB] shadow-xs'
+                    : 'text-[#8C8279] hover:text-[#1A1A1A]'
+                }`}
+              >
+                <FileText className="w-4 h-4 text-amber-300 shrink-0" />
+                <span className="hidden min-[380px]:inline">{isAr ? 'المينيو الورقي (الافتراضي)' : 'Paper Menu (Default)'}</span>
+                <span className="min-[380px]:hidden">{isAr ? 'المينيو الورقي' : 'Paper Menu'}</span>
+              </button>
+
+              <button
+                id="main-switch-to-cards-btn"
+                onClick={() => setViewMode('cards')}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold transition-all ${
+                  viewMode === 'cards'
+                    ? 'bg-[#1A1A1A] text-[#FDFCFB] shadow-xs'
+                    : 'text-[#8C8279] hover:text-[#1A1A1A]'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4 shrink-0" />
+                <span>{isAr ? 'عرض البطاقات' : 'Cards Grid'}</span>
+              </button>
             </div>
           </div>
 
@@ -288,8 +313,11 @@ export default function App() {
         lang={lang}
       />
 
-      {/* Footer */}
+      {/* Footer with Verified Visitor Counter */}
       <Footer lang={lang} />
+
+      {/* Vercel Web Analytics Real Telemetry Integration */}
+      <Analytics />
     </div>
   );
 }

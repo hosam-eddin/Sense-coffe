@@ -2,6 +2,7 @@ import React from 'react';
 import { Language } from '../types';
 import { CAFE_INFO } from '../data/menuData';
 import { SenseLogo } from './SenseLogo';
+import { VisitorCounter } from './VisitorCounter';
 import { MapPin, Mail, Instagram, ExternalLink, Clock, ArrowUp } from 'lucide-react';
 
 interface FooterProps {
@@ -103,10 +104,40 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
 
         </div>
 
+        {/* Real Visitor Telemetry Section */}
+        <div className="py-8 border-b border-[#262626] flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-start space-y-1">
+            <h4 className="text-sm font-semibold text-[#FDFCFB]">
+              {isAr ? 'إحصائيات زوار الموقع الفعلية' : 'Verified Real Visitors Telemetry'}
+            </h4>
+            <p className="text-xs text-[#8C8279] max-w-md leading-relaxed">
+              {isAr
+                ? 'عداد دقيق مبني على زوار حقيقيين (Unique Visitors) متوافق مع Vercel Web Analytics بدون تكرار أو أرقام وهمية.'
+                : 'Accurate telemetry counting verified unique visitors, integrated with Vercel Web Analytics.'}
+            </p>
+          </div>
+
+          <div className="w-full md:w-auto md:min-w-[340px]">
+            <VisitorCounter lang={lang} variant="footer" />
+          </div>
+        </div>
+
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#8C8279]">
-          <p>
-            © {new Date().getFullYear()} Sense Specialty Coffee. {isAr ? 'جميع الحقوق محفوظة.' : 'All rights reserved.'}
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#8C8279] text-center sm:text-start">
+          <p className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+            <span>© {new Date().getFullYear()}</span>
+            <span>•</span>
+            <span>{isAr ? 'جميع الحقوق محفوظة لدى :' : 'All rights reserved to:'}</span>
+            <a
+              id="copyright-author-link"
+              href="https://www.facebook.com/hosam1205"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-[#FDFCFB] hover:text-amber-400 underline underline-offset-4 decoration-amber-400/50 hover:decoration-amber-400 transition-colors inline-flex items-center gap-1"
+              title="Hosam-Eddin Facebook Profile"
+            >
+              Hosam-Eddin
+            </a>
           </p>
 
           <p className="flex items-center gap-1.5 text-xs text-[#8C8279]">
