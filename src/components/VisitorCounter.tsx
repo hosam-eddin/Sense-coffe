@@ -8,13 +8,12 @@ interface VisitorCounterProps {
   variant?: 'footer' | 'compact' | 'badge';
 }
 
-interface VisitorData {
-  count: number | null;
+interface VisitorResponse {
   status: string;
-  source?: string;
-  vercelConfigured?: boolean;
+  totalVisitors: number | null;
+  isNew?: boolean;
   metric?: string;
-  message?: string;
+  lastUpdated?: string;
 }
 
 export const VisitorCounter: React.FC<VisitorCounterProps> = ({
@@ -22,7 +21,7 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
   variant = 'footer',
 }) => {
   const isAr = lang === 'ar';
-  const [data, setData] = useState<VisitorData | null>(null);
+  const [data, setData] = useState<VisitorResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -34,7 +33,6 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
     setError(null);
 
     try {
-      // Send heartbeat / fetch to server-side endpoint
       const res = await fetch('/api/visitors', {
         method: 'POST',
         headers: {
@@ -49,7 +47,7 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
         throw new Error(`HTTP ${res.status}`);
       }
 
-      const result = await res.json();
+      const result = (await res.json()) as VisitorResponse;
       setData(result);
     } catch (err: any) {
       console.warn('Visitor counter fetch failed:', err);
@@ -61,14 +59,14 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
   }, []);
 
   useEffect(() => {
-    // Initial fetch once on mount
     fetchVisitors();
   }, [fetchVisitors]);
 
-  // Format number with localized comma delimiters
-  const formattedCount = data?.count != null
-    ? new Intl.NumberFormat(isAr ? 'ar-EG' : 'en-US').format(data.count)
-    : null;
+  // Format real number with locale formatting
+  const formattedCount =
+    data?.totalVisitors != null
+      ? new Intl.NumberFormat(isAr ? 'ar-EG' : 'en-US').format(data.totalVisitors)
+      : null;
 
   if (variant === 'badge') {
     return (
@@ -81,10 +79,10 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
         <span className="font-serif-artistic italic text-sm text-[#1A1A1A] font-semibold">
-          {loading ? '...' : formattedCount || (isAr ? 'نشط' : 'Active')}
+          {loading ? '...' : formattedCount ?? '0'}
         </span>
         <span className="text-[10px] uppercase tracking-wider">
-          {isAr ? 'زائر حقيقي' : 'unique visitors'}
+          {isAr ? 'إجمالي الزوار' : 'Total Visitors'}
         </span>
       </div>
     );
@@ -99,15 +97,15 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
       <div className="absolute top-0 end-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col justify-between h-full">
-        {/* Top bar: title, live dot & refresh button */}
+        {/* Top bar: title, live dot & actions */}
         <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-[#2A2A2A]">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#A0988D]">
-              {isAr ? 'عداد الزوار الحقيقي' : 'Verified Visitors Telemetry'}
+            <span className="text-[11px] uppercase tracking-[0.15em] font-semibold text-[#A0988D]">
+              {isAr ? 'إجمالي زوار الموقع' : 'Total Visitors'}
             </span>
           </div>
 
@@ -115,7 +113,7 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
             <button
               id="visitor-info-toggle-btn"
               onClick={() => setShowInfoModal(!showInfoModal)}
-              title={isAr ? 'معلومات التحقق ومصدر البيانات' : 'Verification info'}
+              title={isAr ? 'كيف يعمل العداد' : 'How the counter works'}
               className="p-1 rounded-md text-[#8C8279] hover:text-[#FDFCFB] hover:bg-[#2A2A2A] transition-colors text-xs"
             >
               <Info className="w-3.5 h-3.5" />
@@ -145,9 +143,9 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
           ) : error ? (
             <div className="flex items-center gap-2 text-rose-400 text-xs py-1">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{isAr ? 'تعذر جلب العداد حالياً' : 'Counter temporarily unavailable'}</span>
+              <span>{isAr ? 'تعذر تحميل العداد حالياً' : 'Counter temporarily unavailable'}</span>
             </div>
-          ) : data?.count != null ? (
+          ) : data?.totalVisitors != null ? (
             <div>
               <div className="flex items-baseline gap-2">
                 <motion.span
@@ -159,34 +157,30 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
                   {formattedCount}
                 </motion.span>
                 <span className="text-xs text-[#A0988D] font-medium">
-                  {isAr ? 'زائر فعلي' : 'unique visitors'}
+                  {isAr ? 'زائر' : 'visitors'}
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#8C8279]">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>
-                  {data.source === 'vercel_web_analytics'
-                    ? (isAr ? 'موثّق عبر Vercel Web Analytics API' : 'Verified via Vercel Web Analytics API')
-                    : (isAr ? 'زوار فريدون حقيقيون • تشفير آمن' : 'Unique cumulative visitors • Privacy safe')}
+                  {isAr
+                    ? 'عداد حقيقي موحد • تشفير SHA-256 يحافظ على الخصوصية'
+                    : 'Real cumulative counter • Privacy-conscious SHA-256'}
                 </span>
               </div>
             </div>
           ) : (
             <div className="py-1">
-              <span className="font-serif-artistic text-lg text-amber-200/90 font-medium block">
-                {isAr ? 'قيد المزامنة مع Vercel Analytics' : 'Syncing with Vercel Analytics'}
-              </span>
-              <p className="text-[11px] text-[#8C8279] mt-1">
-                {isAr
-                  ? 'تم تجهيز كود الربط. أضف VERCEL_API_TOKEN في إعدادات المشروع لعرض الرقم مباشرة.'
-                  : 'Integration ready. Add VERCEL_API_TOKEN in Vercel settings to populate.'}
-              </p>
+              <div className="flex items-center gap-2 text-[#A0988D] text-xs">
+                <Users className="w-4 h-4 text-amber-300" />
+                <span>{isAr ? 'جاري تهيئة العداد...' : 'Initializing counter...'}</span>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Verification Architecture Explanation Popover */}
+        {/* Informational popover explaining architecture transparently */}
         {showInfoModal && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
@@ -196,17 +190,22 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({
           >
             <p className="font-semibold text-[#FDFCFB] flex items-center gap-1">
               <Activity className="w-3 h-3 text-amber-400" />
-              <span>{isAr ? 'معايير التحقق من الزوار' : 'Verification Criteria'}</span>
+              <span>{isAr ? 'معايير حساب الزوار الحقيقيين' : 'Visitor Counting Criteria'}</span>
             </p>
             <p>
               {isAr
-                ? '• هذا العداد لا يعتمد على أرقام عشوائية أو localStorage أو مجرد مرات تحميل الصفحة.'
-                : '• Does not rely on random numbers, localStorage, or raw page views.'}
+                ? '• يُحسب الزائر مرة واحدة فقط عند زيارة الموقع عبر بصمة مشفرة أحادية الاتجاه (SHA-256).'
+                : '• A visitor is counted once using a one-way SHA-256 cryptographic fingerprint.'}
             </p>
             <p>
               {isAr
-                ? '• يحسب الزوار الفريدين (Unique Visitors) عبر خادم API مع تشفير بصمة الجلسة (SHA-256) دون تخزين أي بيانات شخصية.'
-                : '• Tracks verified unique visitors server-side with zero PII stored.'}
+                ? '• لا يزيد الرقم عند عمل Refresh للصفحة لنفس الزائر.'
+                : '• Does not increment when the same visitor refreshes the page.'}
+            </p>
+            <p>
+              {isAr
+                ? '• لا يتم حفظ عنوان الـ IP الخام أبداً حفاظاً على الخصوصية.'
+                : '• Raw IP addresses are never saved to protect user privacy.'}
             </p>
           </motion.div>
         )}

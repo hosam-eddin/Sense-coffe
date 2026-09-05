@@ -3,178 +3,131 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
-// Memory and file-based store for genuine cumulative unique visitors
-const DATA_FILE = path.join(process.cwd(), '.visitors_data.json');
-const SALT = process.env.VISITOR_SALT || 'sense_coffee_damietta_salt_2026';
+// Store path: safe for standard Node environments and Vercel Serverless (/tmp is writable on Vercel)
+const DATA_FILE = process.env.VERCEL
+  ? path.join('/tmp', '.visitors_data.json')
+  : path.join(process.cwd(), '.visitors_data.json');
 
-interface VisitorStore {
-  totalUniqueVisitors: number;
+// Fixed internal application pepper for one-way SHA-256 hash (no secret env required)
+const APP_PEPPER = 'sense_coffee_damietta_privacy_pepper_2026';
+
+export interface VisitorStore {
+  totalVisitors: number;
   visitedHashes: string[];
   lastUpdated: string;
 }
 
-// In-memory cache for Vercel API queries
-let vercelCache: { count: number; timestamp: number } | null = null;
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds cache
+// In-memory cache for fast repeated reads
+let memoryStore: VisitorStore | null = null;
 
-// Initialize store from disk or memory
-function loadStore(): VisitorStore {
+export function loadStore(): VisitorStore {
+  if (memoryStore) {
+    return memoryStore;
+  }
+
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
       const data = JSON.parse(raw);
-      if (typeof data.totalUniqueVisitors === 'number' && Array.isArray(data.visitedHashes)) {
+      if (typeof data.totalVisitors === 'number' && Array.isArray(data.visitedHashes)) {
+        memoryStore = data;
         return data;
       }
     }
   } catch (err) {
-    console.warn('Could not read visitors file, starting fresh store:', err);
+    console.warn('Could not read visitors file, initializing clean store:', err);
   }
-  return {
-    totalUniqueVisitors: 1, // First real visitor (the current operator/tester)
+
+  const initialStore: VisitorStore = {
+    totalVisitors: 0,
     visitedHashes: [],
     lastUpdated: new Date().toISOString(),
   };
+  memoryStore = initialStore;
+  return initialStore;
 }
 
-function saveStore(store: VisitorStore) {
+export function saveStore(store: VisitorStore): void {
+  memoryStore = store;
   try {
-    // Keep max 50,000 hashes in memory/disk to prevent uncontrolled file growth
+    // Keep max 50,000 hashes in storage to prevent memory unbounded growth
     if (store.visitedHashes.length > 50000) {
       store.visitedHashes = store.visitedHashes.slice(-40000);
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), 'utf-8');
   } catch (err) {
-    console.warn('Could not persist visitors file:', err);
+    console.warn('Could not persist visitors store to disk:', err);
   }
 }
 
-let store: VisitorStore = loadStore();
-
 /**
- * Generates a privacy-preserving SHA-256 hash of client IP + User-Agent
+ * Generates an anonymous, privacy-preserving SHA-256 hash from client network fingerprint.
+ * The raw IP is NEVER stored or logged.
  */
-function getVisitorHash(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = typeof forwarded === 'string'
-    ? forwarded.split(',')[0].trim()
-    : req.socket?.remoteAddress || '127.0.0.1';
-  
-  const userAgent = req.headers['user-agent'] || 'unknown';
-  return crypto.createHash('sha256').update(`${ip}-${userAgent}-${SALT}`).digest('hex');
+export function getVisitorHash(ip: string, userAgent: string): string {
+  const sanitizedIp = ip.trim().toLowerCase();
+  const sanitizedAgent = (userAgent || 'unknown').trim().toLowerCase();
+  return crypto
+    .createHash('sha256')
+    .update(`${sanitizedIp}::${sanitizedAgent}::${APP_PEPPER}`)
+    .digest('hex');
 }
 
 /**
- * Attempts to fetch real Unique Visitors from official Vercel Web Analytics API
+ * Core business logic: records a visitor if new, returns cumulative Total Visitors count.
+ * Calling this multiple times from the same visitor will NOT increment the counter.
  */
-async function fetchVercelAnalyticsVisitors(): Promise<number | null> {
-  const token = process.env.VERCEL_API_TOKEN || process.env.VERCEL_AUTH_TOKEN;
-  const projectId = process.env.VERCEL_PROJECT_ID;
-  const teamId = process.env.VERCEL_TEAM_ID;
+export function recordVisitor(ip: string, userAgent: string): {
+  totalVisitors: number;
+  isNew: boolean;
+  lastUpdated: string;
+} {
+  const store = loadStore();
+  const visitorHash = getVisitorHash(ip, userAgent);
 
-  if (!token || !projectId) {
-    return null;
+  let isNew = false;
+  if (!store.visitedHashes.includes(visitorHash)) {
+    store.visitedHashes.push(visitorHash);
+    store.totalVisitors += 1;
+    store.lastUpdated = new Date().toISOString();
+    saveStore(store);
+    isNew = true;
   }
 
-  // Check in-memory cache
-  const now = Date.now();
-  if (vercelCache && (now - vercelCache.timestamp) < CACHE_TTL_MS) {
-    return vercelCache.count;
-  }
+  return {
+    totalVisitors: store.totalVisitors,
+    isNew,
+    lastUpdated: store.lastUpdated,
+  };
+}
 
+/**
+ * Express Route Handler for /api/visitors (used in local development and container server)
+ */
+export function handleVisitorRequest(req: Request, res: Response) {
   try {
-    // Query Vercel Web Analytics API visits count
-    const teamParam = teamId ? `&teamId=${encodeURIComponent(teamId)}` : '';
-    // Query lifetime / max since range
-    const url = `https://api.vercel.com/v1/query/web-analytics/visits/count?projectId=${encodeURIComponent(projectId)}${teamParam}`;
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = typeof forwarded === 'string'
+      ? forwarded.split(',')[0].trim()
+      : req.socket?.remoteAddress || '127.0.0.1';
+    
+    const userAgent = (req.headers['user-agent'] as string) || 'unknown';
 
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (res.ok) {
-      const data = await res.json() as { count?: number; value?: number };
-      const count = typeof data.count === 'number' ? data.count : typeof data.value === 'number' ? data.value : null;
-      if (count !== null) {
-        vercelCache = { count, timestamp: now };
-        return count;
-      }
-    } else {
-      // Also fallback to stats endpoint if visits/count returns different plan requirement
-      const statsUrl = `https://api.vercel.com/v1/web-analytics/stats?projectId=${encodeURIComponent(projectId)}${teamParam}&type=visitors`;
-      const statsRes = await fetch(statsUrl, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (statsRes.ok) {
-        const statsData = await statsRes.json() as { visitors?: number; uniques?: number };
-        const count = typeof statsData.visitors === 'number' ? statsData.visitors : typeof statsData.uniques === 'number' ? statsData.uniques : null;
-        if (count !== null) {
-          vercelCache = { count, timestamp: now };
-          return count;
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching Vercel Analytics:', error);
-  }
-
-  return null;
-}
-
-/**
- * Controller handling visitor tracking and counter queries
- */
-export async function handleVisitorRequest(req: Request, res: Response) {
-  try {
-    const isPost = req.method === 'POST';
-    const visitorHash = getVisitorHash(req);
-
-    let isNewUnique = false;
-
-    // Check if this hashed visitor has been registered before
-    if (!store.visitedHashes.includes(visitorHash)) {
-      store.visitedHashes.push(visitorHash);
-      store.totalUniqueVisitors += 1;
-      store.lastUpdated = new Date().toISOString();
-      saveStore(store);
-      isNewUnique = true;
-    }
-
-    // Try Vercel Web Analytics API if configured
-    const vercelVisitors = await fetchVercelAnalyticsVisitors();
-
-    const hasVercelConfig = Boolean(
-      (process.env.VERCEL_API_TOKEN || process.env.VERCEL_AUTH_TOKEN) &&
-      process.env.VERCEL_PROJECT_ID
-    );
-
-    const finalCount = vercelVisitors !== null ? vercelVisitors : store.totalUniqueVisitors;
-    const source = vercelVisitors !== null ? 'vercel_web_analytics' : 'verified_cumulative';
+    const result = recordVisitor(ip, userAgent);
 
     return res.status(200).json({
       status: 'success',
-      count: finalCount,
-      isUnique: isNewUnique,
-      source,
-      vercelConfigured: hasVercelConfig,
-      lastUpdated: store.lastUpdated,
-      metric: 'unique_visitors',
+      totalVisitors: result.totalVisitors,
+      isNew: result.isNew,
+      metric: 'total_visitors',
+      lastUpdated: result.lastUpdated,
     });
   } catch (err: any) {
-    console.error('Visitor counter error:', err);
+    console.error('Visitor tracking error:', err);
     return res.status(500).json({
       status: 'error',
-      message: 'Failed to retrieve visitor count',
-      count: store.totalUniqueVisitors || 0,
-      metric: 'unique_visitors',
+      message: 'Failed to process visitor count',
+      totalVisitors: null,
     });
   }
 }
