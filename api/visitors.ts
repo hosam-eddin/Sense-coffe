@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { recordVisitor } from '../src/server/visitorTracker';
+import { recordVisit, getVisitsCount } from '../src/server/visitCounter';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS support
+  // CORS configuration
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -10,34 +10,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
+  // Prevent aggressive edge caching of counter mutations
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   try {
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = typeof forwarded === 'string'
-      ? forwarded.split(',')[0].trim()
-      : req.socket?.remoteAddress || '127.0.0.1';
+    const action = (req.query.action as string) || (req.body?.action as string);
+    const loadId = (req.query.loadId as string) || (req.body?.loadId as string) || undefined;
 
-    const userAgent = (req.headers['user-agent'] as string) || 'unknown';
+    if (action === 'read') {
+      const count = await getVisitsCount();
+      return res.status(200).json({
+        status: 'success',
+        totalVisits: count,
+        isNewVisit: false,
+      });
+    }
 
-    const result = recordVisitor(ip, userAgent);
+    const result = await recordVisit(loadId);
 
     return res.status(200).json({
       status: 'success',
-      totalVisitors: result.totalVisitors,
-      isNew: result.isNew,
-      metric: 'total_visitors',
-      lastUpdated: result.lastUpdated,
+      totalVisits: result.totalVisits,
+      isNewVisit: result.isNewVisit,
     });
   } catch (err: any) {
-    console.error('Vercel serverless visitor counter error:', err);
-    return res.status(500).json({
+    console.error('[Vercel Serverless] Visit counter error:', err);
+    // Never expose technical error messages such as "Current limit exceeded"
+    return res.status(200).json({
       status: 'error',
-      message: 'Failed to record visitor',
-      totalVisitors: null,
+      totalVisits: null,
+      message: 'Visits unavailable',
     });
   }
 }

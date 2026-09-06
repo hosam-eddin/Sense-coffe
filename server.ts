@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { handleVisitorRequest } from './src/server/visitorTracker';
+import { handleVisitRequest } from './src/server/visitCounter';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,9 +18,11 @@ async function startServer() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // Real Visitor Counter endpoint
-  app.get('/api/visitors', handleVisitorRequest);
-  app.post('/api/visitors', handleVisitorRequest);
+  // Total Visits Counter endpoints
+  app.get('/api/visitors', handleVisitRequest);
+  app.post('/api/visitors', handleVisitRequest);
+  app.get('/api/visits', handleVisitRequest);
+  app.post('/api/visits', handleVisitRequest);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {

@@ -108,12 +108,12 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
         <div className="py-8 border-b border-[#262626] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-start space-y-1">
             <h4 className="text-sm font-semibold text-[#FDFCFB]">
-              {isAr ? 'إحصائيات زوار الموقع الفعلية' : 'Verified Real Visitors Telemetry'}
+              {isAr ? 'إحصائيات زيارات الموقع' : 'Website Visits Telemetry'}
             </h4>
             <p className="text-xs text-[#8C8279] max-w-md leading-relaxed">
               {isAr
-                ? 'عداد دقيق مبني على زوار حقيقيين (Unique Visitors) متوافق مع Vercel Web Analytics بدون تكرار أو أرقام وهمية.'
-                : 'Accurate telemetry counting verified unique visitors, integrated with Vercel Web Analytics.'}
+                ? 'تسجيل حقيقي وتراكمي لعدد مرات فتح وزيارة الموقع بدون أرقام وهمية أو تقريبية.'
+                : 'Accurate and cumulative tracking of website visits without fake numbers.'}
             </p>
           </div>
 
